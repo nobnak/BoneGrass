@@ -36,14 +36,14 @@ public class Fur : MonoBehaviour {
 			}
 		}
 
-		var mesh = new Mesh();
-		var vertices = new Vector3[(nLines * nBones) * (nLines * nBones) * 2];
-		var indices = new int[vertices.Length];
-		var weights = new BoneWeight[vertices.Length];
-
 		var dx = 10f / nLines;
 		for (var bonez = 0; bonez < nBones; bonez++) {
 			for (var bonex = 0; bonex < nBones; bonex++) {
+				var mesh = new Mesh();
+				var vertices = new Vector3[nLines * nLines * 2];
+				var indices = new int[vertices.Length];
+				var weights = new BoneWeight[vertices.Length];
+				
 				var boneindex = bonex + bonez * nBonesPlus1;
 				var w0 = new BoneWeight();
 				var w1 = new BoneWeight();
@@ -59,7 +59,7 @@ public class Fur : MonoBehaviour {
 					for (var linex = 0; linex < nLines; linex++) {
 						var ix = linex + bonex * nLines;
 						var iz = linez + bonez * nLines;
-						var lineindex = iz * nLines * nBones + ix;
+						var lineindex = linez * nLines + linex;
 						vertices[2 * lineindex] = new Vector3(ix * dx, 0f, iz * dx);
 						vertices[ 2* lineindex + 1] = new Vector3(ix * dx, 10f, iz * dx);
 						indices[2 * lineindex] = 2 * lineindex;
@@ -74,19 +74,23 @@ public class Fur : MonoBehaviour {
 						weights[2 * lineindex + 1] = w1;
 					}
 				}
+
+				mesh.vertices = vertices;
+				mesh.SetIndices(indices, MeshTopology.Lines, 0);
+				mesh.boneWeights = weights;
+				mesh.bindposes = poses;
+				mesh.RecalculateBounds();
+
+				var go = new GameObject(string.Format("Fur({0}x{1})", bonex, bonez));
+				go.transform.parent = transform;
+				go.transform.localPosition = Vector3.zero;
+				var skin = go.AddComponent<SkinnedMeshRenderer>();
+
+				skin.bones = bones;
+				skin.sharedMesh = mesh;
+				skin.sharedMaterial = mat;
+				skin.localBounds = mesh.bounds;
 			}
 		}
-		mesh.vertices = vertices;
-		mesh.SetIndices(indices, MeshTopology.Lines, 0);
-		mesh.boneWeights = weights;
-		mesh.bindposes = poses;
-		mesh.RecalculateBounds();
-
-		var skin = gameObject.AddComponent<SkinnedMeshRenderer>();
-
-		skin.bones = bones;
-		skin.sharedMesh = mesh;
-		skin.sharedMaterial = mat;
-		skin.localBounds = mesh.bounds;
 	}
 }
